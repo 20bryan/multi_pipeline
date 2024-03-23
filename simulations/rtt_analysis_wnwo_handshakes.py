@@ -23,7 +23,7 @@ plt.rc('legend',fontsize=23)
 
 def count_successful_handshakes():
 
-    PICKLE_PATH = "/home/ubuntu/sigcomm22-paper67-artifacts/simulations/intermediate/smallFlows.pickle"
+    PICKLE_PATH = "./intermediate/smallFlows.pickle"
     with open(PICKLE_PATH, "rb") as fp:
         packets = pickle.load(fp)
     
@@ -89,8 +89,8 @@ def count_successful_handshakes():
 
 def collect_rtts_counts():
 
-    ALL_RTTS_PATH = "/home/ubuntu/sigcomm22-paper67-artifacts/simulations/intermediate/tcptrace_rtts_all.pickle"
-    HSK_RTTS_PATH = "/home/ubuntu/sigcomm22-paper67-artifacts/simulations/intermediate/tcptrace_rtts_syn.pickle"
+    ALL_RTTS_PATH = "./intermediate/tcptrace_rtts_all.pickle"
+    HSK_RTTS_PATH = "./intermediate/tcptrace_rtts_syn.pickle"
 
     all_rtts_count       = 0
     handshake_rtts_count = 0
@@ -111,7 +111,7 @@ def collect_rtts_counts():
 
 def compare_handshake_rtts(conn_count, succ_count, all_rtts_count, handshake_rtts_count):
 
-    PLOT_PATH = "/home/ubuntu/sigcomm22-paper67-artifacts/plots"
+    PLOT_PATH = "./../plots"
 
     print(f"\nNo. of connections: {conn_count}")
     print(f"No. of missing handshakes: {conn_count-succ_count}")

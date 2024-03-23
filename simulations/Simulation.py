@@ -27,6 +27,8 @@ class Simulation(object):
 
     def __init__(self, simulation_params, test=True):
 
+        print("I HAVE INITED")
+
         if False:
             self._custom_print("RECHECK:: Simulation params received: {}".format(simulation_params))
 
@@ -236,6 +238,8 @@ class Simulation(object):
         ## So while we execute actions in a convenient order in simulation (to the extent possible), the final state in each of the 3 data structures is the same as when done in the DP impl.
         ## The accounting/logging is done in a way such that it reflects how things would have happened in the DP impl. The plots are therefore faithful to the actual DP impl.
 
+        print("I HAVE INITED")
+
         # Prep flow key
         flow_key = (packet["ipsrc"], packet["ipdst"], packet["tcpsrc"], packet["tcpdst"])
         
@@ -442,6 +446,7 @@ class Simulation(object):
         ## (2) Packets that result in removing flow entry (RST packets; when conf. interval collapses due to ACKs, entries are removed during contention)
         ## (3) Packets that result in RTT samples (The following isn't true anymore: RST packets with ACK set also count)
 
+        print("I HAVE ACKED")
         ## Prep. flow key
         flow_key = (packet["ipdst"], packet["ipsrc"], packet["tcpdst"], packet["tcpsrc"])
 

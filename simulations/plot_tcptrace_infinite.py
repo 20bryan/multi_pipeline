@@ -21,10 +21,12 @@ plt.rc('legend',fontsize=23)
 
 def plot_rtt_samples_comparison():
 
-    path = "/home/ubuntu/sigcomm22-paper67-artifacts/simulations/intermediate"
+    salt = "2"
+
+    path = "./intermediate"
     path_tcptrace_rtts_all   = os.path.join(path, "tcptrace_rtts_all.pickle")
     path_tcptrace_rtts_nosyn = os.path.join(path, "tcptrace_rtts_nosyn.pickle")
-    path = "/home/ubuntu/sigcomm22-paper67-artifacts/simulations/intermediate/dart_simulations_infmem"
+    path = "./intermediate/dart_simulations_infmem"
     path_dart_inf_mem_syn   = os.path.join(path, "rtt_samples_tcptrace_const_syn.txt")
     path_dart_inf_mem_nosyn = os.path.join(path, "rtt_samples_tcptrace_const_nosyn.txt")
 
@@ -64,7 +66,7 @@ def plot_rtt_samples_comparison():
     plt.xlabel("No. of RTT samples (thousand)")
     plt.ylabel("RTT Tool (+/- handshake RTT)")
     plt.tight_layout()
-    plt.savefig("/home/ubuntu/sigcomm22-paper67-artifacts/plots/figure_9_equivalent.pdf", format="pdf", dpi=300)
+    plt.savefig("./../plots/figure_9_equivalent" + salt + ".pdf", format="pdf", dpi=300)
     plt.close()
     plt.clf()
     print("Plot equivalent to Figure 9 generated.")
@@ -75,6 +77,7 @@ def plot_rtt_samples_comparison():
 
 def plot_rtt_distribution_comparison(tcptrace_rtts_all, tcptrace_rtts_nosyn, dart_inf_mem_syn, dart_inf_mem_nosyn, is_cdf, xlog, ylog):
 
+    salt = "2"
     x1 = np.sort(tcptrace_rtts_all)
     x2 = np.sort(tcptrace_rtts_nosyn)
     x3 = np.sort(dart_inf_mem_syn)
@@ -144,10 +147,9 @@ def plot_rtt_distribution_comparison(tcptrace_rtts_all, tcptrace_rtts_nosyn, dar
     plt.tight_layout()
 
     if is_cdf:
-        out_path = "/home/ubuntu/sigcomm22-paper67-artifacts/plots/figure_10_equivalent.pdf"
-    else:
-        out_path = "/home/ubuntu/sigcomm22-paper67-artifacts/plots/figure_11_equivalent.pdf"
-
+        out_path = "./../plots/figure_10_equivalent" + salt + ".pdf"
+    else: 
+        out_path = "./../plots/figure_11_equivalent" + salt + ".pdf"
     plt.savefig(out_path, format="pdf", dpi=300)
     plt.close()
     plt.clf()
