@@ -19,9 +19,9 @@ plt.rc('legend',fontsize=23)
 
 ########################################
 
-def plot_rtt_samples_comparison():
+salt = "3"
 
-    salt = "2"
+def plot_rtt_samples_comparison():
 
     path = "./intermediate"
     path_tcptrace_rtts_all   = os.path.join(path, "tcptrace_rtts_all.pickle")
@@ -54,10 +54,13 @@ def plot_rtt_samples_comparison():
     print("tcptrace(-SYN): {}".format(len(tcptrace_rtts_nosyn)))
     print("Dart(-SYN): {}".format(len(dart_inf_mem_nosyn)))
     
+    
     plt.figure(figsize=(12,8))
     x = ["Dart(-SYN)", "tcptrace(-SYN)", "Dart(+SYN)", "tcptrace(+SYN)"]
     y = [round(len(dart_inf_mem_nosyn)/1000, 2), round(len(tcptrace_rtts_nosyn)/1000, 2), 
             round(len(dart_inf_mem_syn)/1000, 2), round(len(tcptrace_rtts_all)/1000, 2)]
+    
+    print(y)
     bars = plt.barh(x, y)
     bars[0].set_color('r')
     bars[2].set_color('r')
@@ -77,7 +80,6 @@ def plot_rtt_samples_comparison():
 
 def plot_rtt_distribution_comparison(tcptrace_rtts_all, tcptrace_rtts_nosyn, dart_inf_mem_syn, dart_inf_mem_nosyn, is_cdf, xlog, ylog):
 
-    salt = "2"
     x1 = np.sort(tcptrace_rtts_all)
     x2 = np.sort(tcptrace_rtts_nosyn)
     x3 = np.sort(dart_inf_mem_syn)

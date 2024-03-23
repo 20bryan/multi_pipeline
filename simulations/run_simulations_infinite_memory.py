@@ -89,19 +89,21 @@ class MultiPipelineSwitch:
         self.tcptrace_const_syn = tcptrace_const_syn
         self.tcptrace_const_nosyn = tcptrace_const_nosyn
 
-    def process_packet(self, packet, pipeline_index):
+    def process_packet(self, pipeline_index):
         # Process tcptrace data
-        self.tcptrace_const_syn.process_tcptrace_SEQ(packet, allow_syn=True)
-        self.tcptrace_const_nosyn.process_tcptrace_SEQ(packet, allow_syn=False)
-        self.tcptrace_const_syn.process_tcptrace_ACK(packet, allow_syn=True)
-        self.tcptrace_const_nosyn.process_tcptrace_ACK(packet, allow_syn=False)
-        with self.locks[pipeline_index]:
+        while self.pipelines[pipeline_index]:
+            packet = self.pipelines[pipeline_index].pop(0)
+            self.tcptrace_const_syn.process_tcptrace_SEQ(packet, allow_syn=True)
+            self.tcptrace_const_nosyn.process_tcptrace_SEQ(packet, allow_syn=False)
+            self.tcptrace_const_syn.process_tcptrace_ACK(packet, allow_syn=True)
+            self.tcptrace_const_nosyn.process_tcptrace_ACK(packet, allow_syn=False)
             self.completed_packets += 1
 
     def receive_packet(self, packet):
         pipeline_index = self.calculate_pipeline_index(packet)
-        with self.locks[pipeline_index]:
-            self.pipelines[pipeline_index].append(packet)
+        self.pipelines[pipeline_index].append(packet)
+        self.process_packet(pipeline_index)
+        print(self.completed_packets)
 
     def calculate_pipeline_index(self, packet):
         # Calculate hash based on source and destination IP addresses
@@ -113,11 +115,7 @@ class MultiPipelineSwitch:
         print("new worker")
         while self.completed_packets < TOTAL_PACKETS:
             for pipeline_index in range(self.num_pipelines):
-                with self.locks[pipeline_index]:
-                    if self.pipelines[pipeline_index]:
-                        packet = self.pipelines[pipeline_index].pop(0)
-                        threading.Thread(target=self.process_packet, args=(packet, pipeline_index)).start()
-        print("broke loop")
+                self.process_packet(pipeline_index)
 def main():
     t_format = "%Y-%m-%d %H:%M:%S"
     t_start  = datetime.now()
@@ -134,15 +132,15 @@ def main():
     
     packets_count = 0
 
-    NUM_PIPELINES = 2
+    NUM_PIPELINES = 4
     TOTAL_PACKETS = len(packets)
     print(TOTAL_PACKETS)
     print(packets[2])
 
     switch = MultiPipelineSwitch(NUM_PIPELINES, tcptrace_const_syn, tcptrace_const_nosyn)
 
-    processing_thread = threading.Thread(target=switch.start_processing, args=(TOTAL_PACKETS,))
-    processing_thread.start()
+    # processing_thread = threading.Thread(target=switch.start_processing, args=(TOTAL_PACKETS,))
+    # processing_thread.start()
 
     for packet_data in packets:
         packet = {}
@@ -155,9 +153,8 @@ def main():
             tcptrace_const_nosyn._firstEntryTime = packet["timestamp"]
         switch.receive_packet(packet)
         packets_count += 1
-        print(packets_count)
     
-    processing_thread.join()
+    # processing_thread.join()
     
     tcptrace_const_syn.concludeRTTDict()
     tcptrace_const_nosyn.concludeRTTDict()
