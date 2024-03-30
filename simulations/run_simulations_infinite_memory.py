@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import sys
 from TCPTraceConst import TCPTraceConst
 import pickle
 import os
@@ -87,6 +88,7 @@ class MultiPipelineSwitch:
         self.pipelines = [[] for _ in range(num_pipelines)]
         self.locks = [threading.Lock() for _ in range(num_pipelines)]
         self.completed_packets = 0
+        self.processed_packets_by_pipeline = [0] * num_pipelines
 
         self.arr_tcptrace_const_syn = [tcptrace_const_syn]
         self.arr_tcptrace_const_nosyn = [tcptrace_const_nosyn]
@@ -96,12 +98,7 @@ class MultiPipelineSwitch:
        for index in range(self.num_pipelines):
             if index == pipeline_index:
                 continue
-            tcptrace_const_syn = self.arr_tcptrace_const_syn[index]
-            tcptrace_const_nosyn = self.arr_tcptrace_const_nosyn[index]
-            tcptrace_const_syn.process_tcptrace_SEQ(packet, allow_syn=True)
-            tcptrace_const_nosyn.process_tcptrace_SEQ(packet, allow_syn=False)
-            tcptrace_const_syn.process_tcptrace_ACK(packet, allow_syn=True)
-            tcptrace_const_nosyn.process_tcptrace_ACK(packet, allow_syn=False)
+            self.recirculate_packet_to_pipeline(packet, index)
 
     def process_packet(self, pipeline_index):
         # Process tcptrace data
@@ -121,6 +118,31 @@ class MultiPipelineSwitch:
         pipeline_index = self.calculate_pipeline_index(packet)
         self.pipelines[pipeline_index].append(packet)
         self.process_packet(pipeline_index)
+
+    def recirculate_packet_to_pipeline(self, packet, pipeline_index):
+        tcptrace_const_syn = self.arr_tcptrace_const_syn[pipeline_index]
+        tcptrace_const_nosyn = self.arr_tcptrace_const_nosyn[pipeline_index]
+        tcptrace_const_syn.process_tcptrace_SEQ(packet, allow_syn=True)
+        tcptrace_const_nosyn.process_tcptrace_SEQ(packet, allow_syn=False)
+        tcptrace_const_syn.process_tcptrace_ACK(packet, allow_syn=True)
+        tcptrace_const_nosyn.process_tcptrace_ACK(packet, allow_syn=False)
+        
+        self.processed_packets_by_pipeline[pipeline_index] += 1
+                   
+
+    def receive_packet_ingress_leader(self, packet):
+        pipeline_index = self.calculate_pipeline_index(packet)
+        self.pipelines[pipeline_index].append(packet)
+        self.process_packet_ingress_leader(pipeline_index)
+
+
+    def process_packet_ingress_leader(self, pipeline_index):
+        # Process tcptrace data
+        while self.pipelines[pipeline_index]:
+            packet = self.pipelines[pipeline_index].pop(0)
+            destination_pipeline_index = 0
+            self.recirculate_packet_to_pipeline(packet, destination_pipeline_index)
+            self.completed_packets += 1
 
     def calculate_pipeline_index(self, packet):
         # Calculate hash based on source and destination IP addresses
@@ -143,8 +165,8 @@ class MultiPipelineSwitch:
             self.arr_tcptrace_const_nosyn.append(TCPTraceConst(self.local_path, 2000))
             self.arr_tcptrace_const_nosyn[-1]._firstEntryTime   = timestamp
         
-        print(self.arr_tcptrace_const_syn)
-def main():
+
+def main(argument = None):
     t_format = "%Y-%m-%d %H:%M:%S"
     t_start  = datetime.now()
     print("Starting simulations at time: {}".format(t_start.strftime(t_format)))
@@ -160,10 +182,12 @@ def main():
     
     packets_count = 0
 
+
+    # try 1 pipeline, 2 pipelines, 4 pipelines, then 16 pipelines
     NUM_PIPELINES = 4
     TOTAL_PACKETS = len(packets)
-    print(TOTAL_PACKETS)
-    print(packets[2])
+    # print(TOTAL_PACKETS)
+    # print(packets[2])
 
     switch = MultiPipelineSwitch(local_path, NUM_PIPELINES, tcptrace_const_syn, tcptrace_const_nosyn)
 
@@ -178,10 +202,19 @@ def main():
 
         if packets_count == 0:
             switch.initialize_buffers(packet["timestamp"])
-        switch.receive_packet(packet)
+        
+        if argument is None:
+            switch.receive_packet(packet)
+        elif argument == "ingress_leader":
+            switch.receive_packet_ingress_leader(packet)
+        else:
+            raise ValueError("Invalid argument: " + str(argument))
         packets_count += 1
     
     # processing_thread.join()
+
+    print(switch.completed_packets)
+    print(switch.processed_packets_by_pipeline)
     
     tcptrace_const_syn.concludeRTTDict()
     tcptrace_const_nosyn.concludeRTTDict()
@@ -224,6 +257,12 @@ def main():
 ##################################################
 
 if __name__ == "__main__":
-    main()
-
+    if len(sys.argv) == 1:
+        main()  # Call main function without argument
+    elif len(sys.argv) == 2:
+        argument = sys.argv[1]
+        main(argument)  # Call main function with the provided argument
+    else:
+        print("Usage: python script_name.py [argument]")
+        sys.exit(1)
 ##################################################

@@ -19,7 +19,7 @@ plt.rc('legend',fontsize=23)
 
 ########################################
 
-salt = "4"
+salt = "5"
 
 def plot_rtt_samples_comparison():
 
